@@ -1,0 +1,25 @@
+@startuml Smart Home Context Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_TOP_DOWN()
+
+title Smart Home Context Diagram
+Person(User, "Пользователь", "Использует умные устройства")
+
+Enterprise_Boundary(UserManagement, "Подключение новых пользователей") {
+  Person(Installer, "Специалист", "Устанавливает и настраивает устройства")
+}
+
+Enterprise_Boundary(SmartHomeSystem, "Система умного дома") {
+  System_Ext(Handlers, "Устройства отопления", "Управляют отоплением в доме")
+  System_Ext(Sensors, "Датчики температуры", "Собирают данные о температуре")
+}
+
+
+Rel_L(User, Installer, "Вызывает специалиста")
+Rel(Installer, SmartHomeSystem, "Подключает систему")
+
+Rel_R(User, SmartHomeSystem, "Управляет умным домом")
+
+@enduml
