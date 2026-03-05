@@ -1,6 +1,21 @@
 version: "3.8"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: smarthome-rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
   postgres:
     image: postgres:16-alpine
     container_name: smarthome-postgres
@@ -47,11 +62,41 @@ services:
         condition: service_healthy
       temperature-api:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
       - TEMPERATURE_API_URL=http://temperature-api:8081
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
     ports:
       - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  device-handler:
+    build:
+      context: ./device-handler
+      dockerfile: Dockerfile
+    container_name: smarthome-device-handler
+    ports:
+      - "8083:8080"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  device-monitor:
+    build:
+      context: ./device-monitor
+      dockerfile: Dockerfile
+    container_name: smarthome-device-monitor
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8082:8082"
     restart: unless-stopped
     networks:
       - smarthome-network
