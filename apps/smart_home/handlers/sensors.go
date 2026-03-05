@@ -18,13 +18,15 @@ import (
 type SensorHandler struct {
 	DB                 *db.DB
 	TemperatureService *services.TemperatureService
+	Publisher          *services.EventPublisher
 }
 
 // NewSensorHandler creates a new SensorHandler
-func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
+func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService, publisher *services.EventPublisher) *SensorHandler {
 	return &SensorHandler{
 		DB:                 db,
 		TemperatureService: temperatureService,
+		Publisher:          publisher,
 	}
 }
 
@@ -208,6 +210,8 @@ func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	go h.Publisher.Publish(id, request.Value, request.Status)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Sensor value updated successfully"})
 }

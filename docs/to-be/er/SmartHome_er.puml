@@ -1,0 +1,87 @@
+@startuml Smart Home ER-Diagram
+title Smart Home ER-Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+enum DeviceStatus {
+    ON
+    OFF
+}
+
+enum DeviceCategory {
+    LIGHT
+    THERMOSTAT
+    LOCK
+    SENSOR
+}
+
+class User {
+  - id: String
+  - name: String
+  - email: String
+  - home_id: Home
+}
+
+class Device {
+  - id: String
+  - name: String
+  - type_id: DeviceType
+  - room_id: Room
+  - serial_number: String
+  - status: DeviceStatus
+}
+
+class Home {
+  - id: String
+  - address: String
+  - user_id: User
+  - script_ids: List<Script>
+}
+
+class Room {
+  - id: String
+  - name: String
+  - home_id: Home
+}
+
+class TelemetryData {
+  - id: String
+  - device_id: Device
+  - timestamp: DateTime
+  - data: Map<String, Any>
+}
+
+class DeviceType {
+  - id: String
+  - name: String
+  - category: DeviceCategory
+  - action_schema: Map<String, Any>
+}
+
+class Script {
+  - id: String
+  - name: String
+  - home_id: Home
+  - actions: List<Action>
+}
+
+class Action {
+  - id: String
+  - script_id: Script
+  - device_id: Device
+  - command: Map<String, Any>
+}
+
+User "1" -- "1..*" Home : owns
+Home "1" -- "1..*" Room : contains
+Room "1" -- "1..*" Device : contains
+Device "1" -- "*" TelemetryData : generates
+Device "1" -- "1" DeviceType : is of type
+Home "1" -- "0..*" Script : has
+Script "1" -- "1..*" Action : contains
+Action "1" -- "1" Device : targets
+
+
+@enduml

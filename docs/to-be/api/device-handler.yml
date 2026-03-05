@@ -1,0 +1,88 @@
+openapi: "3.1.1"
+info:
+  title: Smart Home REST API - Сервис управления устройствами
+  version: "1.0"
+servers:
+  - url: https://localhost:8080/api
+paths:
+  /device/{deviceId}/command:
+    post:
+      summary: Отправить команду на устройство
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            example: "device-123"
+          description: Идентификатор устройства
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                command:
+                  type: string
+                  description: Команда для устройства
+                  example: "turn_on"
+      responses:
+        "200":
+          description: Команда успешно отправлена
+        "400":
+          description: Неверный запрос (например, устройство не найдено или команда не поддерживается)
+        "500":
+          description: Внутренняя ошибка сервера
+  /device/{deviceId}/status:
+    get:
+      summary: Получить статус устройства
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+            example: "device-123"
+          description: Идентификатор устройства
+      responses:
+        "200":
+          description: Статус устройства успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: Текущий статус устройства
+                    example: "on"
+        "400":
+          description: Неверный запрос (например, устройство не найдено)
+        "500": 
+          description: Внутренняя ошибка сервера
+  /device/{deviceId}/data:
+    get:
+      summary: Получить данные от устройства
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+          description: Идентификатор устройства
+          example: "device-123"
+      responses:
+        "200":
+          description: Данные от устройства успешно получены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Данные от устройства
+                    example:
+                      temperature: 22.5
+                      humidity: 60

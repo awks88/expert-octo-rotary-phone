@@ -1,0 +1,50 @@
+@startuml Smart Home Container Diagram
+title Smart Home Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+  Container(Api, "API Application", "", "Провайдер функциональности для управления устройствами")
+  Container(QueueMonitoring, "Очередь данных от устройств", "RabbitMQ", "Обрабатывает сообщения от устройств для передачи их в сервис мониторинга и на Real-time API")
+
+  Container(QueueCommands, "Очередь команд", "RabbitMQ", "Обрабатывает сообщения сервисов для отправки команд устройствам")
+  ContainerDb(DeviceDatabase, "База данных пользователей и устройств", "PostgreSQL", "Хранит информацию о пользователях, устройствах, автоматизации")
+
+  Container_Boundary(DeviceHandler, "Сервис управления устройствами") {
+    Component(ApiController, "API Controller", "Go", "Получает запросы от API на выполнение команд для устройств")
+    Component(CommandController, "Command Controller","Go", "- Формирует команду для устройства. \n- Получает данные об устройстве из базы данных.")
+    Component(ServiceLayer, "Service Layer", "Go", "Логика обработки команд и взаимодействия с очередью команд")
+    Component(RepositoryLayer, "Repository Layer", "Go", "Логика доступа к данным устройств в базе данных")
+    Component(LoggerService, "Logger Service", "Go", "Логирует все действия связанные с работой с устройствами для аудита и отладки")
+  }
+
+  Container_Boundary(DeviceAutomation, "Сервис автоматизации устройств") {
+    Component(AutomationController, "Automation Controller", "Go", "Получает запросы на настройку и выполнение сценариев автоматизации")
+    Component(AutomationService, "Automation Service", "Go", "Логика обработки сценариев автоматизации и взаимодействия с сервисом управления устройствами")
+    Component(AutomationRepository, "Automation Repository", "Go", "Логика доступа к данным сценариев автоматизации в базе данных")
+    Component(SchedulerService, "Scheduler Service", "Go", "Планирует выполнение сценариев автоматизации на основе событий и условий")
+    Component(AutomationLogger, "Automation Logger", "Go", "Логирует все действия связанные с работой сценариев автоматизации для аудита и отладки")
+    Component(ConditionEvaluator, "Condition Evaluator", "Go", "Оценивает условия для выполнения сценариев автоматизации на основе данных от устройств и других источников")
+  }
+
+Rel(ApiController, CommandController, "Передает команды для обработки")
+Rel(QueueMonitoring, AutomationController, "Отправляет данные от устройств для триггера сценариев автоматизации", "JSON/HTTPS")
+Rel(CommandController, ServiceLayer, "Передает команды для выполнения")
+Rel(CommandController, RepositoryLayer, "Получает данные об устройстве")
+Rel(ServiceLayer, QueueCommands, "Отправляет команды устройствам", "JSON/HTTPS")
+Rel(RepositoryLayer, DeviceDatabase, "Читает данные об устройствах", "SQL")
+Rel(Api, ApiController, "Запрос на выполнение команды", "JSON/HTTPS")
+
+Rel(Api, AutomationController, "Настройка автоматизации", "JSON/HTTPS")
+Rel(AutomationController, ConditionEvaluator, "Передает сценарии автоматизации для обработки")
+Rel(ConditionEvaluator, SchedulerService, "Передает данные для планирования сценариев")
+Rel(SchedulerService, AutomationRepository, "Записывает данные о сценариях")
+Rel(ConditionEvaluator, AutomationService, "Отправляет результат оценки условий для выполнения сценариев")
+Rel(SchedulerService, AutomationService, "Передает информацию о запланированных сценариях для выполнения")
+Rel(AutomationService, AutomationRepository, "Получает данные о сценариях автоматизации")
+Rel(AutomationService, ApiController, "Отправляет команды устройствам", "JSON/HTTPS")
+Rel(AutomationRepository, DeviceDatabase, "Читает и записывает данные о сценариях автоматизации", "SQL")
+
+
+@enduml

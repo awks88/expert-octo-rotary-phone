@@ -1,0 +1,64 @@
+@startuml Smart Home Code Diagram
+title Smart Home Code Diagram — ConditionEvaluator
+
+top to bottom direction
+
+enum Operator {
+    GT
+    LT
+    EQ
+    AND
+    OR
+}
+
+class ConditionContext {
+    - deviceStates: Map<String, Map<String, Any>>
+    + getDeviceProperty(deviceId: String, property: String): Any
+}
+
+
+class Condition {
+    - deviceId: String
+    - property: String
+    - operator: Operator
+    - threshold: Any
+    + check(context: ConditionContext): Boolean
+}
+
+' Проверяет условие на возможность выполнения
+class CompositeCondition {
+    - operator: Operator
+    - conditions: List<Condition>
+    + check(context: ConditionContext): Boolean
+}
+
+class ConditionEvaluator {
+    + evaluate(script: Script, context: ConditionContext): Boolean
+}
+
+class Script {
+    - id: String
+    - name: String
+    - rootCondition: CompositeCondition
+    - actions: List<Action>
+    + getRootCondition(): CompositeCondition
+}
+
+class Device {
+    - id: String
+    - name: String
+    - properties: Map<String, Any>
+    + getProperty(name: String): Any
+}
+
+CompositeCondition o-- Condition : contains *
+Condition --> Operator
+CompositeCondition --> Operator
+ConditionEvaluator --> Script : uses
+ConditionEvaluator --> ConditionContext : uses
+ConditionEvaluator --> CompositeCondition : evaluates
+ConditionContext --> Device : reads state from
+ConditionEvaluator --> ActionDispatcher : triggers if true
+Repository --> ConditionContext : builds
+
+@enduml

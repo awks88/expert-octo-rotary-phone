@@ -1,0 +1,69 @@
+@startuml Smart Home Container Diagram
+title Smart Home Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+
+Person(User, "Пользователь", "Использует умные устройства")
+
+
+System_Ext(UserDevices, "Устройства", "Устройства, которые пользователь может подключить к экосистеме умного дома")
+
+
+System_Boundary(SmartHomeSystem, "Экосистема умного дома") {
+
+  Container(SpaApp, "Single Page Application","React, TypeScript", "Позволяет пользователю управлять устройствами, настраивать автоматизацию и просматривать данные от датчиков")
+  Container(Api, "API Application", "REST API", "Провайдер функциональности для управления устройствами")
+  Container(RealTimeApi, "Real-time API", "WebSocket, JSON", "Провайдер функциональности для получения данных от устройств в реальном времени")
+  Container(QueueCommands, "Очередь команд", "RabbitMQ", "Обрабатывает сообщения сервисов для отправки команд устройствам")
+  Container(QueueMonitoring, "Очередь данных от устройств", "RabbitMQ", "Обрабатывает сообщения от устройств для передачи их в сервис мониторинга и на Real-time API")
+  
+  ContainerDb(DeviceDatabase, "База данных пользователей и устройств", "PostgreSQL", "Хранит информацию о пользователях, устройствах, автоматизации")
+  ContainerDb(MonitoringHistory, "База данных мониторинга", "PostgreSQL", "Хранит исторические данные от устройств для анализа и построения графиков")
+
+  System_Boundary(Connector, "Domain: Подключения устройств") {
+    Container(DeviceConnector, "Сервис подключения устройств", "Go", "Обеспечивает интеграцию с различными устройствами по стандартным протоколам")
+  }
+
+  System_Boundary(Handlers, "Domain: Управление устройствами") {
+    Container(DeviceHandler, "Сервис управления устройствами", "Go", "Обрабатывает команды от пользователя и взаимодействует с устройствами")
+    Container(DeviceAutomation, "Сервис автоматизации устройств", "Go", "Позволяет настраивать сценарии работы устройств на основе событий и условий")
+  }
+
+  System_Boundary(Monitoring, "Domain: Мониторинг состояния устройств") {
+    Container(DeviceMonitor, "Сервис мониторинга устройств", "Go", "Отслеживает состояние устройств и собирает данные от датчиков")
+    ContainerDb(MonitorCache, "Данные мониторинга", "Redis", "Кэширует данные от устройств для быстрого доступа")
+  }
+
+}
+
+Rel(User, SpaApp, "Подключается к системе и управляет устройствами")
+
+Rel(SpaApp, Api, "Обращение к API", "JSON/HTTPS")
+BiRel(SpaApp, RealTimeApi, "Подключение к Real-time API", "WebSocket/JSON")
+
+BiRel(RealTimeApi, DeviceMonitor, "Получает данные от устройств в реальном времени", "WebSocket/JSON")
+
+Rel(Api, DeviceConnector, "Запрос на выполнение команды", "JSON/HTTPS")
+Rel(Api, DeviceHandler, "Запрос на выполнение команды", "JSON/HTTPS")
+Rel(Api, DeviceAutomation, "Настройка автоматизации", "JSON/HTTPS")
+
+Rel(DeviceConnector, QueueCommands, "Подключает устройство", "JSON/HTTPS")
+Rel(DeviceHandler, QueueCommands, "Отправляет команды устройствам", "JSON/HTTPS")
+BiRel(DeviceMonitor, MonitorCache, "Чтение данных", "Redis protocol")
+
+Rel(DeviceAutomation, DeviceHandler, "Отправляет команды устройствам", "JSON/HTTPS")
+
+Rel(QueueMonitoring, MonitoringHistory, "Запись данных", "SQL")
+Rel(QueueMonitoring, MonitorCache, "Получает данные от устройств")
+Rel(QueueMonitoring, DeviceAutomation, "Отправляет данные от устройств для триггера сценариев автоматизации", "JSON/HTTPS")
+
+Rel(UserDevices, QueueMonitoring, "Отправляет данные от устройств для отображения пользователю", "JSON/HTTPS")
+
+Rel(QueueCommands, UserDevices, "Отправляет команды устройствам", "JSON/HTTPS")
+Rel(QueueCommands, DeviceDatabase, "Запись данных об устройствах", "SQL")
+
+
+@enduml
