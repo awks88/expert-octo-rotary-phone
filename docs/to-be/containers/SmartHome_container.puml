@@ -15,7 +15,7 @@ System_Ext(UserDevices, "Устройства", "Устройства, кото�
 System_Boundary(SmartHomeSystem, "Экосистема умного дома") {
 
   Container(SpaApp, "Single Page Application","React, TypeScript", "Позволяет пользователю управлять устройствами, настраивать автоматизацию и просматривать данные от датчиков")
-  Container(Api, "API Application", "", "Провайдер функциональности для управления устройствами")
+  Container(Api, "API Application", "REST API", "Провайдер функциональности для управления устройствами")
   Container(RealTimeApi, "Real-time API", "WebSocket, JSON", "Провайдер функциональности для получения данных от устройств в реальном времени")
   Container(QueueCommands, "Очередь команд", "RabbitMQ", "Обрабатывает сообщения сервисов для отправки команд устройствам")
   Container(QueueMonitoring, "Очередь данных от устройств", "RabbitMQ", "Обрабатывает сообщения от устройств для передачи их в сервис мониторинга и на Real-time API")
