@@ -16,8 +16,6 @@ System_Boundary(SmartHomeSystem, "Экосистема умного дома") {
 
   System_Boundary(Monitoring, "Domain: Мониторинг состояния устройств") 
 
-  System_Boundary(Automation, "Domain: Управление сценариями работы устройств")
-
 }
 
 

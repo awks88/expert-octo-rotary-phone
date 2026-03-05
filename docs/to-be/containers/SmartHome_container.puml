@@ -20,25 +20,21 @@ System_Boundary(SmartHomeSystem, "Экосистема умного дома") {
   Container(QueueCommands, "Очередь команд", "RabbitMQ", "Обрабатывает сообщения сервисов для отправки команд устройствам")
   Container(QueueMonitoring, "Очередь данных от устройств", "RabbitMQ", "Обрабатывает сообщения от устройств для передачи их в сервис мониторинга и на Real-time API")
   
-  ContainerDb(DeviceDatabase, "База данных", "PostgreSQL", "Хранит информацию о пользователях и их устройствах")
+  ContainerDb(DeviceDatabase, "База данных пользователей и устройств", "PostgreSQL", "Хранит информацию о пользователях, устройствах, автоматизации")
   ContainerDb(MonitoringHistory, "База данных мониторинга", "PostgreSQL", "Хранит исторические данные от устройств для анализа и построения графиков")
-  ContainerDb(AutomationDatabase, "База данных автоматизации", "PostgreSQL", "Хранит сценарии автоматизации и связанные с ними данные")
 
   System_Boundary(Connector, "Domain: Подключения устройств") {
-    Container(DeviceConnector, "Сервис подключения устройств", "Go", "Обеспечивает интеграцию с различными устройствами и протоколами")
+    Container(DeviceConnector, "Сервис подключения устройств", "Go", "Обеспечивает интеграцию с различными устройствами по стандартным протоколам")
   }
 
   System_Boundary(Handlers, "Domain: Управление устройствами") {
     Container(DeviceHandler, "Сервис управления устройствами", "Go", "Обрабатывает команды от пользователя и взаимодействует с устройствами")
+    Container(DeviceAutomation, "Сервис автоматизации устройств", "Go", "Позволяет настраивать сценарии работы устройств на основе событий и условий")
   }
 
   System_Boundary(Monitoring, "Domain: Мониторинг состояния устройств") {
     Container(DeviceMonitor, "Сервис мониторинга устройств", "Go", "Отслеживает состояние устройств и собирает данные от датчиков")
     ContainerDb(MonitorCache, "Данные мониторинга", "Redis", "Кэширует данные от устройств для быстрого доступа")
-  }
-
-  System_Boundary(Automation, "Domain: Управление сценариями работы устройств") {
-    Container(DeviceAutomation, "Сервис автоматизации устройств", "Go", "Позволяет настраивать сценарии работы устройств на основе событий и условий")
   }
 
 }
@@ -52,21 +48,22 @@ BiRel(RealTimeApi, DeviceMonitor, "Получает данные от устро
 
 Rel(Api, DeviceConnector, "Запрос на выполнение команды", "JSON/HTTPS")
 Rel(Api, DeviceHandler, "Запрос на выполнение команды", "JSON/HTTPS")
-Rel(Api, DeviceAutomation, "Запрос на выполнение команды", "JSON/HTTPS")
+Rel(Api, DeviceAutomation, "Настройка автоматизации", "JSON/HTTPS")
 
 Rel(DeviceConnector, QueueCommands, "Подключает устройство", "JSON/HTTPS")
 Rel(DeviceHandler, QueueCommands, "Отправляет команды устройствам", "JSON/HTTPS")
 BiRel(DeviceMonitor, MonitorCache, "Чтение данных", "Redis protocol")
-Rel(DeviceAutomation, QueueCommands, "Отправляет команды устройствам", "JSON/HTTPS")
+
+Rel(DeviceAutomation, DeviceHandler, "Отправляет команды устройствам", "JSON/HTTPS")
 
 Rel(QueueMonitoring, MonitoringHistory, "Запись данных", "SQL")
 Rel(QueueMonitoring, MonitorCache, "Получает данные от устройств")
+Rel(QueueMonitoring, DeviceAutomation, "Отправляет данные от устройств для триггера сценариев автоматизации", "JSON/HTTPS")
 
 Rel(UserDevices, QueueMonitoring, "Отправляет данные от устройств для отображения пользователю", "JSON/HTTPS")
 
 Rel(QueueCommands, UserDevices, "Отправляет команды устройствам", "JSON/HTTPS")
 Rel(QueueCommands, DeviceDatabase, "Запись данных об устройствах", "SQL")
-Rel(QueueCommands, AutomationDatabase, "Запись данных о сценариях автоматизации", "SQL")
 
 
 @enduml
