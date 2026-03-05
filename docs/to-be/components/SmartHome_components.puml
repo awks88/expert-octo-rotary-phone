@@ -1,0 +1,27 @@
+@startuml Smart Home Container Diagram
+title Smart Home Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+  Container(Api, "API Application", "", "Провайдер функциональности для управления устройствами")
+  Container(QueueCommands, "Очередь команд", "RabbitMQ", "Обрабатывает сообщения сервисов для отправки команд устройствам")
+  ContainerDb(DeviceDatabase, "База данных", "PostgreSQL", "Хранит информацию о пользователях и их устройствах")
+
+  Container_Boundary(DeviceHandler, "Сервис управления устройствами") {
+    Component(ApiController, "API Controller", "Go", "Получает запросы от API на выполнение команд для устройств")
+    Component(CommandController, "Command Controller","Go", "- Формирует команду для устройства. \n- Получает данные об устройстве из базы данных.")
+    Component(ServiceLayer, "Service Layer", "Go", "Логика обработки команд и взаимодействия с очередью команд")
+    Component(RepositoryLayer, "Repository Layer", "Go", "Логика доступа к данным устройств в базе данных")
+    Component(LoggerService, "Сервис логирования", "Go", "Логирует все действия связанные с работой с устройствами для аудита и отладки")
+  }
+
+Rel(ApiController, CommandController, "Передает команды для обработки")
+Rel(CommandController, ServiceLayer, "Передает команды для выполнения")
+Rel(CommandController, RepositoryLayer, "Получает данные об устройстве")
+Rel(ServiceLayer, QueueCommands, "Отправляет команды устройствам", "JSON/HTTPS")
+Rel(RepositoryLayer, DeviceDatabase, "Читает данные об устройствах", "SQL")
+Rel(Api, ApiController, "Запрос на выполнение команды", "JSON/HTTPS")
+
+@enduml
